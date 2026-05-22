@@ -1,9 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import './ProductList.css'
+import { useDispatch } from 'react-redux'; // Import useDispatch to communicate with the Redux store
+import { addItem } from './CartSlice';       // Import the addItem action from CartSlice
+import './ProductList.css';
 import CartItem from './CartItem';
+
 function ProductList({ onHomeClick }) {
     const [showCart, setShowCart] = useState(false);
     const [showPlants, setShowPlants] = useState(false); // State to control the visibility of the About Us page
+    
+    // Initialize Redux dispatch
+    const dispatch = useDispatch();
+
+    // State management hook to track which products are added to the cart
+    const [addedToCart, setAddedToCart] = useState({});
 
     const plantsArray = [
         {
@@ -194,7 +203,7 @@ function ProductList({ onHomeClick }) {
                 {
                     name: "Cast Iron Plant",
                     image: "https://cdn.pixabay.com/photo/2017/02/16/18/04/cast-iron-plant-2072008_1280.jpg",
-                    description: "Hardy plant that tolerates low light and neglect.",
+                    description: "Hardy plant that treats low light and neglect.",
                     cost: "$20"
                 },
                 {
@@ -212,26 +221,27 @@ function ProductList({ onHomeClick }) {
             ]
         }
     ];
+
     const styleObj = {
         backgroundColor: '#4CAF50',
         color: '#fff!important',
         padding: '15px',
         display: 'flex',
         justifyContent: 'space-between',
-        alignIems: 'center',
+        alignItems: 'center',
         fontSize: '20px',
-    }
+    };
     const styleObjUl = {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         width: '1100px',
-    }
+    };
     const styleA = {
         color: 'white',
         fontSize: '30px',
         textDecoration: 'none',
-    }
+    };
 
     const handleHomeClick = (e) => {
         e.preventDefault();
@@ -240,18 +250,30 @@ function ProductList({ onHomeClick }) {
 
     const handleCartClick = (e) => {
         e.preventDefault();
-        setShowCart(true); // Set showCart to true when cart icon is clicked
+        setShowCart(true);
     };
+
     const handlePlantsClick = (e) => {
         e.preventDefault();
-        setShowPlants(true); // Set showAboutUs to true when "About Us" link is clicked
-        setShowCart(false); // Hide the cart when navigating to About Us
+        setShowPlants(true);
+        setShowCart(false);
     };
 
     const handleContinueShopping = (e) => {
         e.preventDefault();
         setShowCart(false);
     };
+
+    // Add to Cart handler function
+    const handleAddToCart = (product) => {
+        dispatch(addItem(product)); // Dispatch the action to add the product to the cart (Redux action)
+
+        setAddedToCart((prevState) => ({ // Update the local state to reflect that the product has been added
+            ...prevState, // Spread the previous state to retain existing entries
+            [product.name]: true, // Set the current product's name as a key with value 'true' to mark it as added
+        }));
+    };
+
     return (
         <div>
             <div className="navbar" style={styleObj}>
@@ -265,7 +287,6 @@ function ProductList({ onHomeClick }) {
                             </div>
                         </a>
                     </div>
-
                 </div>
                 <div style={styleObjUl}>
                     <div> <a href="#" onClick={(e) => handlePlantsClick(e)} style={styleA}>Plants</a></div>
@@ -274,8 +295,34 @@ function ProductList({ onHomeClick }) {
             </div>
             {!showCart ? (
                 <div className="product-grid">
-
-
+                    {plantsArray.map((category, index) => ( // Loop through each category in plantsArray
+                        <div key={index}> {/* Unique key for each category div */}
+                            <h1>
+                                <div>{category.category}</div> {/* Display the category name */}
+                            </h1>
+                            <div className="product-list"> {/* Container for the list of plant cards */}
+                                {category.plants.map((plant, plantIndex) => ( // Loop through each plant in the current category
+                                    <div className="product-card" key={plantIndex}> {/* Unique key for each plant card */}
+                                        <img 
+                                            className="product-image" 
+                                            src={plant.image} // Display the plant image
+                                            alt={plant.name} // Alt text for accessibility
+                                        />
+                                        <div className="product-title">{plant.name}</div> {/* Display plant name */}
+                                        <div className="product-description">{plant.description}</div> {/* Display plant description */}
+                                        <div className="product-cost">{plant.cost}</div> {/* Display plant cost */}
+                                        <button
+                                            className="product-button"
+                                            onClick={() => handleAddToCart(plant)} // Handle adding plant to cart
+                                            disabled={addedToCart[plant.name]} // Visual cue helper: Disables button if already in cart
+                                        >
+                                            {addedToCart[plant.name] ? "Added to Cart" : "Add to Cart"}
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
                 </div>
             ) : (
                 <CartItem onContinueShopping={handleContinueShopping} />
